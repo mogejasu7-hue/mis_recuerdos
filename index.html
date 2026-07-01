@@ -652,6 +652,31 @@
     margin-top: 12px;
   }
 
+  .modal-media-wrap {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+  }
+
+  .modal-media-wrap .delete-media-btn {
+    position: absolute;
+    top: 6px; right: 6px;
+    background: var(--danger);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 30px; height: 30px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+
+  .modal-media-wrap:hover .delete-media-btn { opacity: 1; }
+
   .modal-person-tag {
     background: var(--bg3);
     border: 1px solid var(--accent2);
@@ -1327,10 +1352,16 @@ async function openMemory(id) {
   } catch(e){}
 
   const fotosHtml = fotos.length
-    ? fotos.map(f=>`<img class="modal-image" src="${f.url}" alt="" onclick="openLightbox('${f.url}')">`).join('')
+    ? fotos.map(f=>`<div class="modal-media-wrap">
+        <img class="modal-image" src="${f.url}" alt="" onclick="openLightbox('${f.url}')">
+        <button class="delete-media-btn" onclick="deleteArchivo('${f.id}', '${id}')" title="Borrar foto">🗑️</button>
+      </div>`).join('')
     : '';
   const videosHtml = videos.length
-    ? videos.map(v=>`<video class="modal-image" src="${v.url}" controls style="background:#000;"></video>`).join('')
+    ? videos.map(v=>`<div class="modal-media-wrap">
+        <video class="modal-image" src="${v.url}" controls style="background:#000;"></video>
+        <button class="delete-media-btn" onclick="deleteArchivo('${v.id}', '${id}')" title="Borrar vídeo">🗑️</button>
+      </div>`).join('')
     : '';
   const imagesHtml = (fotosHtml || videosHtml)
     ? `<div class="modal-images">${fotosHtml}${videosHtml}</div>`
@@ -1358,6 +1389,19 @@ async function openMemory(id) {
   `;
 
   document.getElementById('memory-modal').classList.add('open');
+}
+
+async function deleteArchivo(archivoId, memoryId) {
+  if (!confirm('¿Borrar este archivo? Esta acción no se puede deshacer.')) return;
+  try {
+    await supa('DELETE', `/archivos?id=eq.${archivoId}`);
+    allArchivos = allArchivos.filter(a => a.id !== archivoId);
+    toast('🗑️ Archivo borrado', 'info');
+    // Reload modal with updated data
+    openMemory(memoryId);
+  } catch(e) {
+    toast('Error borrando archivo: ' + e.message, 'error');
+  }
 }
 
 function closeModal() {
