@@ -1316,6 +1316,7 @@ async function openMemory(id) {
 
   const archivos = allArchivos.filter(a=>a.recuerdo_id===id);
   const fotos = archivos.filter(a=>a.tipo==='foto');
+  const videos = archivos.filter(a=>a.tipo==='video');
 
   // Load people
   let personas = [];
@@ -1325,10 +1326,17 @@ async function openMemory(id) {
     personas = allPersonas.filter(p=>ids.includes(p.id));
   } catch(e){}
 
-  const imagesHtml = fotos.length
-    ? `<div class="modal-images">${fotos.map(f=>`<img class="modal-image" src="${f.url}" alt="" onclick="openLightbox('${f.url}')">`).join('')}</div>`
+  const fotosHtml = fotos.length
+    ? fotos.map(f=>`<img class="modal-image" src="${f.url}" alt="" onclick="openLightbox('${f.url}')">`).join('')
+    : '';
+  const videosHtml = videos.length
+    ? videos.map(v=>`<video class="modal-image" src="${v.url}" controls style="background:#000;"></video>`).join('')
+    : '';
+  const imagesHtml = (fotosHtml || videosHtml)
+    ? `<div class="modal-images">${fotosHtml}${videosHtml}</div>`
     : '';
 
+  const totalArchivos = archivos.length;
   document.getElementById('modal-content').innerHTML = `
     ${imagesHtml}
     <div class="modal-decade">${m.decada||''} ${m.fecha_aprox ? '· '+m.fecha_aprox : ''}</div>
@@ -1337,7 +1345,8 @@ async function openMemory(id) {
     <div class="modal-info">
       ${m.lugar ? `<div class="modal-info-item"><strong>📍 Lugar</strong>${m.lugar}</div>` : ''}
       ${m.decada ? `<div class="modal-info-item"><strong>🗓️ Época</strong>${m.decada}</div>` : ''}
-      <div class="modal-info-item"><strong>📸 Archivos</strong>${fotos.length} foto${fotos.length!==1?'s':''}</div>
+      <div class="modal-info-item"><strong>📸 Fotos</strong>${fotos.length}</div>
+      ${videos.length ? `<div class="modal-info-item"><strong>🎥 Vídeos</strong>${videos.length}</div>` : ''}
     </div>
     ${personas.length ? `<div class="modal-people">${personas.map(p=>`<span class="modal-person-tag">👤 ${p.nombre}</span>`).join('')}</div>` : ''}
   `;
@@ -1611,15 +1620,15 @@ async function savePersona() {
 function editPersona(id) {
   const p = allPersonas.find(x=>x.id===id);
   if (!p) return;
-  editingPersonaId = id;
+  goTo('nueva-persona'); // primero reseteamos
+  editingPersonaId = id; // luego seteamos el id y los valores
   document.getElementById('per-nombre').value = p.nombre || '';
   document.getElementById('per-desc').value   = p.descripcion || '';
+  document.getElementById('persona-form-title').textContent = 'Editar persona';
   if (p.foto_url) {
     document.getElementById('per-foto-preview').innerHTML =
       `<img src="${p.foto_url}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--accent2);">`;
   }
-  document.getElementById('persona-form-title').textContent = 'Editar persona';
-  goTo('nueva-persona');
 }
 
 async function deletePersona(id) {
